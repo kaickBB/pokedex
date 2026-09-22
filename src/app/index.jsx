@@ -4,17 +4,16 @@ import {
   Text,
   View,
   FlatList,
-  SafeAreaView,
   TouchableOpacity,
   StatusBar,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Importação dos Componentes Reutilizáveis
 import PokemonCard from '../../components/PokemonCard';
 import SearchBar from '../../components/SearchBar';
 import Loading from '../../components/Loading';
 import PokemonDetail from '../../screens/PokemonDetail';
-
 
 export default function App() {
   // 1. Definição dos Estados do Projeto
@@ -30,7 +29,6 @@ export default function App() {
       setLoading(true);
       setErro(null);
 
-      // Busca os 30 primeiros Pokémon (Desafio da Prova)
       const response = await fetch('https://pokeapi.co/api/v2/pokemon?limit=30');
 
       if (!response.ok) {
@@ -40,18 +38,18 @@ export default function App() {
       const data = await response.json();
       setPokemons(data.results);
     } catch (error) {
-      setErro('Não foi possível carregar os Pokémon. Verifique sua conexão.');
+      setErro('Não foi possível carregar os Pokémon. Verifique a sua ligação.');
     } finally {
       setLoading(false);
     }
   }
 
-  // 3. useEffect para carregar os dados ao montar a tela
+  // 3. useEffect para carregar os dados ao montar o ecrã
   useEffect(() => {
     carregarPokemons();
   }, []);
 
-  // 4. Lógica de Filtragem da Barra de Busca
+  // 4. Lógica de Filtragem da Barra de Pesquisa
   const pokemonsFiltrados = pokemons.filter((pokemon) =>
     pokemon.name.toLowerCase().includes(pesquisa.toLowerCase())
   );
@@ -64,19 +62,20 @@ export default function App() {
   // --- Renderização Condicional: Erro ---
   if (erro) {
     return (
-      <View style={styles.centerContainer}>
+      <SafeAreaView style={styles.centerContainer}>
         <Text style={styles.textoErro}>{erro}</Text>
         <TouchableOpacity style={styles.botaoRecarregar} onPress={carregarPokemons}>
           <Text style={styles.textoBotaoRecarregar}>Recarregar</Text>
         </TouchableOpacity>
-      </View>
+      </SafeAreaView>
     );
   }
 
   // --- Renderização Condicional: Tela de Detalhes ---
   if (pokemonSelecionado) {
     return (
-      <SafeAreaView style={styles.containerArea}>
+      <SafeAreaView style={styles.safeAreaSuperior} edges={['top', 'left', 'right']}>
+        <StatusBar barStyle="light-content" backgroundColor="#FF0000" />
         <PokemonDetail
           pokemon={pokemonSelecionado}
           onVoltar={() => setPokemonSelecionado(null)}
@@ -87,7 +86,7 @@ export default function App() {
 
   // --- Renderização Principal: Lista Pokédex ---
   return (
-    <SafeAreaView style={styles.containerArea}>
+    <SafeAreaView style={styles.safeAreaSuperior} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor="#FF0000" />
       
       {/* Cabeçalho */}
@@ -98,36 +97,41 @@ export default function App() {
         </TouchableOpacity>
       </View>
 
-      {/* Componente Barra de Pesquisa */}
-      <SearchBar valor={pesquisa} onChangeValor={setPesquisa} />
+      {/* Corpo da Aplicação */}
+      <View style={styles.corpoContainer}>
+        <SearchBar valor={pesquisa} onChangeValor={setPesquisa} />
 
-      {/* Exibição condicional caso a pesquisa não encontre nenhum Pokémon */}
-      {pokemonsFiltrados.length === 0 ? (
-        <View style={styles.centerContainer}>
-          <Text style={styles.textoVazio}>
-            Nenhum Pokémon encontrado com "{pesquisa}".
-          </Text>
-        </View>
-      ) : (
-        <FlatList
-          data={pokemonsFiltrados}
-          keyExtractor={(item) => item.name}
-          numColumns={2}
-          contentContainerStyle={styles.listaContent}
-          renderItem={({ item }) => (
-            <PokemonCard
-              pokemon={item}
-              onPress={() => setPokemonSelecionado(item)}
-            />
-          )}
-        />
-      )}
+        {pokemonsFiltrados.length === 0 ? (
+          <View style={styles.centerContainer}>
+            <Text style={styles.textoVazio}>
+              Nenhum Pokémon encontrado com "{pesquisa}".
+            </Text>
+          </View>
+        ) : (
+          <FlatList
+            data={pokemonsFiltrados}
+            keyExtractor={(item) => item.name}
+            numColumns={2}
+            contentContainerStyle={styles.listaContent}
+            renderItem={({ item }) => (
+              <PokemonCard
+                pokemon={item}
+                onPress={() => setPokemonSelecionado(item)}
+              />
+            )}
+          />
+        )}
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  containerArea: {
+  safeAreaSuperior: {
+    flex: 1,
+    backgroundColor: '#FF0000', // Preenche a área do notch/câmara com vermelho
+  },
+  corpoContainer: {
     flex: 1,
     backgroundColor: '#F5F5F5',
   },
@@ -164,6 +168,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    backgroundColor: '#F5F5F5',
   },
   textoErro: {
     fontSize: 16,
